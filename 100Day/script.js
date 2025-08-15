@@ -227,7 +227,7 @@ function renderChart({ labels, data }) {
 // Muat chat otomatis
 async function loadChatData() {
   const status = $('#parseStatus');
-  status.textContent = 'Memuat chat...';
+  //status.textContent = 'Memuat chat...';
 
   try {
     const response = await fetch('data/chat.txt');
@@ -276,3 +276,4 @@ document.addEventListener('DOMContentLoaded', () => {
   loadChatData();
 
 });
+
