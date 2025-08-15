@@ -258,7 +258,7 @@ async function loadChatData() {
       .map(([k, v]) => `${k}: ${v.toLocaleString('id-ID')}`)
       .join(' • ');
 
-    status.textContent = `Selesai! Ditemukan: ${items}. Grafik menunjukkan distribusi bulanan.`;
+   
 
   } catch (err) {
     status.textContent = 'Gagal memuat chat. Pastikan file ada di folder /data/';
@@ -274,4 +274,5 @@ document.addEventListener('DOMContentLoaded', () => {
   setInterval(updateLiveCounter, 1000);
   $('#year').textContent = new Date().getFullYear();
   loadChatData();
+
 });
