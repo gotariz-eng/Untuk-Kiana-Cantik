@@ -1,0 +1,388 @@
+/* ==========================
+   STYLE
+   ========================== */
+:root {
+  --bg: #0f0c29;
+  --bg2: #302b63;
+  --bg3: #24243e;
+  --pink: #ff4d6d;
+  --soft: #ffd6e0;
+  --card: #ffffff0f;
+  --text: #f8f9fa;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  color: var(--text);
+  font-family: Poppins, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial, Noto Sans;
+  background: radial-gradient(60% 80% at 70% 10%, var(--bg2), transparent 60%),
+              radial-gradient(50% 60% at 20% 10%, var(--bg3), transparent 60%),
+              linear-gradient(120deg, var(--bg), var(--bg3));
+  overflow-x: hidden;
+}
+
+a {
+  color: var(--soft);
+  text-decoration: none;
+}
+
+/* --- Header / Hero --- */
+header {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  position: relative;
+  padding: 4rem 1.25rem 3rem;
+  z-index: 10;
+}
+
+.hero {
+  max-width: 1100px;
+  width: 100%;
+  display: grid;
+  gap: 2rem;
+  align-items: center;
+  grid-template-columns: 1.2fr 1fr;
+}
+
+@media (max-width: 900px) {
+  .hero {
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: 1.5rem;
+    padding: 1rem;
+  }
+}
+
+.title {
+  font-size: clamp(1.5rem, 5vw, 3rem);
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 0;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.subtitle {
+  opacity: 0.85;
+  font-size: 0.95rem;
+  max-width: 500px;
+  margin: 0.5rem auto 1rem;
+  line-height: 1.5;
+}
+
+/* --- Pulse Circle (Detak Jantung + Counter) --- */
+.pulse-circle {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  width: 180px;
+  height: 180px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.pulse-circle .digits {
+  font-family: "Poppins", sans-serif;
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #ffd6e0;
+  letter-spacing: 0.5px;
+  z-index: 10;
+  margin-bottom: 0.25rem;
+}
+
+.pulse-circle .label {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  color: white;
+  font-style: italic;
+}
+
+.pulse-circle::before {
+  content: "";
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #302b63, #24243e);
+  border: 2px solid #ff4d6d;
+  box-shadow: 0 8px 25px rgba(255, 77, 109, 0.3);
+  z-index: 1;
+  animation: pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  10% {
+    transform: scale(1.04);
+  }
+  20% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(1.06);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
+/* --- Chip & Buttons --- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 999px;
+  background: #ffffff1a;
+  backdrop-filter: blur(6px);
+  border: 1px solid #ffffff33;
+  font-size: 0.9rem;
+  margin-bottom: 0.8rem;
+}
+
+/* --- Section blocks --- */
+section {
+  padding: 5rem 1.25rem;
+}
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid #ffffff1a;
+  border-radius: 20px;
+  padding: 1.25rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+}
+
+h2 {
+  font-size: clamp(1.5rem, 4vw, 2.25rem);
+  margin: 0 0 1rem;
+}
+
+.grid {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 900px) {
+  .grid-2 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.btn {
+  appearance: none;
+  border: none;
+  padding: 0.8rem 1.1rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+  background: linear-gradient(135deg, #ffd6e0, #ff8fab);
+  color: #5a2533;
+  text-align: center;
+  width: 100%;
+  max-width: 200px;
+  margin: 0.4rem auto;
+  display: block;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(255, 141, 171, 0.35);
+}
+
+/* --- Navigation --- */
+nav {
+  position: fixed;
+  inset: auto 0 16px;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 50;
+  width: 100%;
+  padding: 0 1rem;
+}
+
+.nav-inner {
+  pointer-events: auto;
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 999px;
+  background: #ffffff14;
+  backdrop-filter: blur(8px);
+  border: 1px solid #ffffff2a;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 100%;
+  font-size: 0.85rem;
+}
+
+/* --- Stats --- */
+.stat {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.25rem 1rem;
+  align-items: center;
+}
+
+.stat .num {
+  font-size: 1.4rem;
+  font-weight: 800;
+}
+
+/* --- Gallery --- */
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+}
+
+.gallery img {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 3/4;
+  object-fit: cover;
+  border-radius: 16px;
+  border: 2px solid #ffffff1a;
+  transition: transform 0.3s ease, box-shadow 0.2s ease;
+}
+
+.gallery img:hover {
+  transform: scale(1.03);
+  box-shadow: 0 8px 25px rgba(255, 77, 109, 0.2);
+}
+
+/* --- Notes & Footer --- */
+footer {
+  padding: 2.5rem 1.25rem;
+  text-align: center;
+  opacity: 0.8;
+  font-size: 0.9rem;
+}
+
+footer a {
+  color: var(--soft);
+}
+
+/* --- Floating Hearts Background --- */
+.float-hearts {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.float-hearts span {
+  position: absolute;
+  display: block;
+  width: 10px;
+  height: 10px;
+  background: var(--pink);
+  transform: rotate(45deg);
+  opacity: 0.1;
+  border-radius: 2px;
+  animation: float 12s linear infinite;
+}
+
+.float-hearts span::before,
+.float-hearts span::after {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: var(--pink);
+  border-radius: 50%;
+}
+
+.float-hearts span::before {
+  top: -5px;
+  left: 0;
+}
+
+.float-hearts span::after {
+  left: -5px;
+  top: 0;
+}
+
+@keyframes float {
+  to {
+    transform: translateY(-120vh) rotate(45deg);
+  }
+}
+
+/* --- Responsive Chart --- */
+#timelineChart {
+  max-height: 300px;
+  width: 100%;
+}
+
+#timelineChart canvas {
+  max-height: 300px !important;
+  height: 300px !important;
+  width: 100% !important;
+}
+
+/* --- Mobile Extra Fix --- */
+@media (max-width: 500px) {
+  .pulse-circle {
+    width: 150px;
+    height: 150px;
+  }
+
+  .pulse-circle::before {
+    width: 150px;
+    height: 150px;
+  }
+
+  .pulse-circle .digits {
+    font-size: 1.8rem;
+  }
+
+  .pulse-circle .label {
+    font-size: 0.8rem;
+  }
+
+  .time-text {
+    margin-top: 1rem;
+    font-size: 0.95rem;
+    opacity: 0.9;
+    color: var(--text);
+    text-align: center;
+    display: block; /* Pastikan selalu tampil */
+    white-space: nowrap;
+    z-index: 10;
+  }
+  .time-text span {
+    color: #ffd6e0;
+    font-weight: 600;
+  }
+}

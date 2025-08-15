@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Untuk Kiana Cantik 💗</title>
+  <meta name="description" content="Kumpulan kata favorit kita dari chat." />
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Great+Vibes&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- Style -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="float-hearts" aria-hidden="true"></div>
+
+  <nav>
+    <div class="nav-inner">
+      <a href="#hero" class="chip">⏱️ Waktu Kita</a>
+      <a href="#stats" class="chip">📊 Kata & Timeline</a>
+      <a href="#gallery" class="chip">🖼️ Galeri</a>
+      <a href="#notes" class="chip">💌 Catatan</a>
+    </div>
+  </nav>
+
+  <header id="hero">
+    <div class="hero">
+      <div>
+        <div class="chip" style="margin-bottom:1rem">Dimulai sejak <strong>13 April 2025</strong></div>
+        <h1 class="title">Hai Kianaaa, ini <span style="font-family:'Great Vibes',cursive; color:var(--soft);">jejak 100 (+)</span> 💘💌💝</h1>
+        <p class="subtitle">
+          Dari semua obrolan kita, ini kumpulan kata yang paling sering muncul. Tiap kata punya cerita, tiap cerita punya rasa. ❤️
+        </p>
+        <div style="display:flex; gap:.75rem; flex-wrap:wrap; margin-top:1rem">
+          <a class="btn" href="#stats">Fav word</a>
+          <a class="btn" href="#gallery">Gallery</a>
+        </div>
+      </div>
+
+      <div class="pulse-circle">
+        <div class="digits" id="acceleratedCount">1</div>
+        <div class="label">hari bersama</div>
+      </div>
+
+      <div class="time-text" style="margin-top:1rem; font-size:0.95rem; opacity:0.9; text-align:center;">
+        <div>
+          <span id="days">0</span> hari • 
+          <span id="hours">0</span> jam • 
+          <span id="minutes">0</span> menit • 
+          <span id="seconds">0</span> detik
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section id="stats">
+    <div class="container">
+      <div class="card">
+        <h2>📊 Word Counter</h2>
+        <p>Jumlah kata favorit yang muncul dari percakapan kita ❤️</p>
+
+        <div id="parseStatus" style="margin-top:1rem; opacity:.85"></div>
+        
+        <!-- Counter Bubble Chat -->
+        <div class="grid" style="margin-top:1rem">
+          <div class="card" style="background:#ffffff12">
+            <div class="stat">
+              <div>💬 Kianaaa</div>
+              <div class="num" id="cKianaBubble">0</div>
+            </div>
+          </div>
+          <div class="card" style="background:#ffffff12">
+            <div class="stat">
+              <div>💬 Farizzz</div>
+              <div class="num" id="cFarizBubble">0</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Word Counter -->
+        <div class="grid" style="margin-top:1rem">
+          <div class="card" style="background:#ffffff12"><div class="stat"><div>❤️ Kangen</div><div class="num" id="cKangen">0</div></div></div>
+          <div class="card" style="background:#ffffff12"><div class="stat"><div>🙏 Maaf</div><div class="num" id="cMaaf">0</div></div></div>
+          <div class="card" style="background:#ffffff12"><div class="stat"><div>🎁 Terima Kasih</div><div class="num" id="cThanks">0</div></div></div>
+          <div class="card" style="background:#ffffff12"><div class="stat"><div>😤 Kesel</div><div class="num" id="cMarah">0</div></div></div>
+          <div class="card" style="background:#ffffff12"><div class="stat"><div>💖 Manis</div><div class="num" id="cManis">0</div></div></div>
+          <div class="card" style="background:#ffffff12"><div class="stat"><div>🐱 Oteyy</div><div class="num" id="cOteyy">0</div></div></div>
+          <div class="card" style="background:#ffffff12"><div class="stat"><div>🤏 Huum</div><div class="num" id="cHuum">0</div></div></div>
+          <div class="card" style="background:#ffffff12"><div class="stat"><div>🚫 Gajadi</div><div class="num" id="cGajadi">0</div></div></div>
+          <div class="card" style="background:#ffffff12"><div class="stat"><div>🤭 Ih/Aih</div><div class="num" id="cIh">0</div></div></div>
+          <div class="card" style="background:#ffffff12"><div class="stat"><div>🍽️ Mam</div><div class="num" id="cMam">0</div></div></div>
+          <div class="card" style="background:#ffffff12"><div class="stat"><div>😴 Bobo</div><div class="num" id="cBobo">0</div></div></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:2rem">
+        <h2>📈 Grafik Kata</h2>
+        <p>Menampilkan frekuensi kata-kata favorit tiap bulan</p>
+        <canvas id="timelineChart" height="260" role="img" aria-label="Grafik timeline kata kunci"></canvas>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- Gallery, Notes, Footer tetap sama -->
+  <section id="gallery">
+    <div class="container">
+      <h2>🖼️ Galeri Kita</h2>
+      <div class="gallery">
+        <img src="assets/foto1.jpg" alt="Kita bersama" />
+        <img src="assets/foto2.jpg" alt="Kita bersama" />
+        <img src="assets/foto3.jpg" alt="Kita bersama" />
+        <img src="assets/foto4.jpg" alt="Kita bersama" />
+        <img src="assets/foto5.jpg" alt="Kita bersama" />
+        <img src="assets/foto6.jpg" alt="Kita bersama" />
+        <img src="assets/foto7.jpg" alt="Kita bersama" />
+        <img src="assets/foto8.jpg" alt="Kita bersama" />
+        <img src="assets/foto9.jpeg" alt="Kita bersama" />
+        <img src="assets/foto10.jpeg" alt="Kita bersama" />
+      </div>
+    </div>
+  </section>
+
+  <section id="notes">
+    <div class="container">
+      <div class="card">
+        <h2>💌 Catatan Kecil</h2>
+        <p style="font-family: 'Dancing Script', cursive; font-size: 1.6rem; color: var(--soft); text-align: center;">
+          Thank you for being my safest place. For every “oteyy”, “hum”, and “manis” — I always smile. You made me feel seen, heard, and truly loved? haha. I’m so grateful for every little thing you do for me… kamu itu rumahh kianaa, Fariz. ❤️
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <small>© <span id="year"></span> Our Fav Word • <a href="#hero">Kembali ke atas</a></small>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
