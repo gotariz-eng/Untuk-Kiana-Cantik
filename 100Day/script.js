@@ -1,18 +1,14 @@
 /* ==========================
-   SCRIPT
+   SCRIPT - SUDAH DIPERBAIKI
    ========================== */
-
 // Tanggal mulai
 const startDate = new Date('2025-04-13T00:00:00+07:00');
-
 // Helper
 const $ = sel => document.querySelector(sel);
-
 // Floating hearts
 function spawnFloatingHearts() {
   const wrap = $('.float-hearts');
   if (!wrap) return;
-
   for (let i = 0; i < 40; i++) {
     const s = document.createElement('span');
     s.style.left = Math.random() * 100 + 'vw';
@@ -23,39 +19,32 @@ function spawnFloatingHearts() {
     wrap.appendChild(s);
   }
 }
-
 // Update waktu real-time
 function updateLiveCounter() {
   const now = new Date();
   let diff = now - startDate;
   if (diff < 0) diff = 0;
-
   const sec = Math.floor(diff / 1000);
   const days = Math.floor(sec / 86400);
   const hours = Math.floor((sec % 86400) / 3600);
   const minutes = Math.floor((sec % 3600) / 60);
   const seconds = sec % 60;
-
   $('#days').textContent = days.toLocaleString('id-ID');
   $('#hours').textContent = hours;
   $('#minutes').textContent = minutes;
   $('#seconds').textContent = seconds;
 }
-
 // Animasi counter 1 → 124
 function acceleratedIntro() {
   const target = $('#acceleratedCount');
   const total = 124;
   const totalTime = 20000;
-
   const delays = Array.from({ length: total }, (_, i) => {
     const raw = 600 * Math.exp(-i * 0.055);
     return Math.max(raw, 30);
   });
-
   const scale = totalTime / delays.reduce((a, b) => a + b, 0);
   const adjustedDelays = delays.map(d => d * scale);
-
   function step(i) {
     if (i >= total) {
       setTimeout(() => {
@@ -65,14 +54,11 @@ function acceleratedIntro() {
       }, 200);
       return;
     }
-
     target.textContent = i + 1;
     setTimeout(() => step(i + 1), adjustedDelays[i]);
   }
-
   step(0);
 }
-
 // Smooth scroll
 document.addEventListener('click', (e) => {
   const a = e.target.closest('a[href^="#"]');
@@ -99,59 +85,57 @@ const KEY_PATTERNS = {
   emot_smile: /:'\)|:\)/,
   emot_cry: /:'\(/,
   emot_hug: /cup cupp|peluk jauh|peluk/i,
-  emot_lucu: /ulululu|ululu|gemess|gemes/i
+  emot_lucu: /ulululu|ululu|gemess|gemes/i,
+  duyung: /duyung{1,5}|duyungg|duyunggg|putri duyung|duyung cantik|duyungku|oteyy duyung/i,
+  eskrim: /eskrim{1,5}|es krim|ice cream|eskrimku|es krimku|eskrim manis|eskrim kesukaan|es krim kesukaan/i,
 };
 
 // Pola tanggal untuk ekstraksi
 const DATE_PATTERNS = [
-  // 10/08/25, 7:35 pm - riz: ...
   /(\d{1,2}\/\d{1,2}\/\d{2,4},\s*\d{1,2}:\d{2}\s*(?:am|pm)\s*-\s*[^:]+:\s*)/i,
-  // [10/08/25, 7:35 pm] riz: ...
   /(\[\d{1,2}\/\d{1,2}\/\d{2,4},\s*\d{1,2}:\d{2}\s*(?:am|pm)\]\s*[^:]+:\s*)/i,
-  // 2025-08-10 19:35 - riz: ...
   /(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}(?::\d{2})?\s*-\s*[^:]+:\s*)/
 ];
 
-// Ekstrak semua pesan dari teks tanpa baris baru
+// Ekstrak semua pesan dari teks
 function parseChat(text) {
   const entries = [];
-
-  // Pisahkan berdasarkan pola tanggal
   const lines = text.split(/(?=\d{1,2}\/\d{1,2}\/\d{2,4},\s*\d{1,2}:\d{2}\s*(?:am|pm))/i);
-  
   for (const line of lines) {
     if (!line.trim() || line.includes('You deleted this message')) continue;
 
-    // Coba ekstrak tanggal dan nama pengirim
     const dateMatch = line.match(DATE_PATTERNS[0]);
     if (!dateMatch) continue;
+    const dateStr = dateMatch[0].replace(/ /g, ' ');
 
-    const dateStr = dateMatch[0].replace(/ /g, ' '); // Fix karakter aneh
+    // 🔹 Ekstrak nama pengirim: setelah `- ` sampai `:`
+    const senderMatch = dateStr.match(/-\s*(.+?):/);
+    const sender = senderMatch ? senderMatch[1].trim() : 'Unknown';
+
     const msgText = line.replace(dateStr, '').trim();
 
-    // Parsing tanggal
     const m = dateStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4}),\s*(\d{1,2}):(\d{2})\s*(am|pm)/i);
     if (!m) continue;
-
     let [_, day, mon, year, hh, mm, ampm] = m;
     day = +day; mon = +mon; year = +year; hh = +hh; mm = +mm;
     if (year < 100) year += 2000;
     if (ampm.toLowerCase() === 'pm' && hh !== 12) hh += 12;
     if (ampm.toLowerCase() === 'am' && hh === 12) hh = 0;
-
     const date = new Date(year, mon - 1, day, hh, mm);
 
-    entries.push({ date, text: msgText });
+    // ✅ Simpan sender
+    entries.push({ date, text: msgText, sender });
   }
-
   return entries;
 }
 
-// Hitung semua kata kunci
+// ✅ PERBAIKAN: Hitung semua kemunculan kata (bukan hanya 1)
 function countKeywords(text) {
   const result = {};
   for (const [key, regex] of Object.entries(KEY_PATTERNS)) {
-    result[key] = (text.match(regex) || []).length;
+    const globalRegex = new RegExp(regex.source, 'gi');
+    const matches = text.matchAll(globalRegex);
+    result[key] = Array.from(matches).length;
   }
   return result;
 }
@@ -171,13 +155,11 @@ function bucketMonthly(entries) {
       current[k] = (current[k] || 0) + v;
     }
   }
-
   const labels = Array.from(map.keys()).sort();
   const data = {};
   for (const key of Object.keys(KEY_PATTERNS)) {
     data[key] = labels.map(l => map.get(l)[key] || 0);
   }
-
   return { labels, data };
 }
 
@@ -187,7 +169,6 @@ function renderChart({ labels, data }) {
   const ctx = $('#timelineChart');
   if (!ctx) return;
   if (chart) chart.destroy();
-
   const datasets = [
     { label: 'Kangen', data: data.kangen, borderColor: '#ff8fab', backgroundColor: 'rgba(255, 141, 171, 0.2)' },
     { label: 'Maaf', data: data.maaf, borderColor: '#a0d8f1', backgroundColor: 'rgba(160, 216, 241, 0.2)' },
@@ -203,9 +184,10 @@ function renderChart({ labels, data }) {
     { label: 'Cute Smile', data: data.emot_smile, borderColor: '#ffeb3b', backgroundColor: 'rgba(255, 235, 59, 0.2)' },
     { label: 'Almost Crying', data: data.emot_cry, borderColor: '#4caf50', backgroundColor: 'rgba(76, 175, 80, 0.2)' },
     { label: 'Peluk & Cium', data: data.emot_hug, borderColor: '#e91e63', backgroundColor: 'rgba(233, 30, 99, 0.2)' },
-    { label: 'Lucu', data: data.emot_lucu, borderColor: '#ff9800', backgroundColor: 'rgba(255, 152, 0, 0.2)' }
+    { label: 'Lucu', data: data.emot_lucu, borderColor: '#ff9800', backgroundColor: 'rgba(255, 152, 0, 0.2)' },
+    { label: 'Duyung', data: data.duyung, borderColor: '#00b8d4', backgroundColor: 'rgba(0, 184, 212, 0.2)' },
+    { label: 'Eskrim', data: data.eskrim, borderColor: '#f50057', backgroundColor: 'rgba(245, 0, 87, 0.2)' }
   ].filter(ds => ds.data.some(v => v > 0));
-
   chart = new Chart(ctx, {
     type: 'line',
     data: { labels, datasets },
@@ -227,17 +209,28 @@ function renderChart({ labels, data }) {
 // Muat chat otomatis
 async function loadChatData() {
   const status = $('#parseStatus');
-  //status.textContent = 'Memuat chat...';
-
+  status.textContent = 'Memuat chat...';
   try {
     const response = await fetch('data/chat.txt');
     if (!response.ok) throw new Error('File tidak ditemukan');
-
     const text = await response.text();
     const entries = parseChat(text);
-    const fullText = entries.map(e => e.text).join(' ');
 
+    // 🔢 Hitung jumlah pesan per orang
+    let kianaCount = 0, farizCount = 0;
+    for (const entry of entries) {
+      const sender = entry.sender.toLowerCase();
+      if (sender.includes('kiana')) kianaCount++;
+      else if (sender.includes('riz') || sender === 'fariz') farizCount++;
+    }
+    $('#cKianaBubble').textContent = kianaCount.toLocaleString('id-ID');
+    $('#cFarizBubble').textContent = farizCount.toLocaleString('id-ID');
+
+    // 🔢 Hitung total kata
+    const fullText = entries.map(e => e.text).join(' ');
     const counts = countKeywords(fullText);
+
+    // Update Word Counter
     $('#cKangen').textContent = counts.kangen.toLocaleString('id-ID');
     $('#cMaaf').textContent = counts.maaf.toLocaleString('id-ID');
     $('#cThanks').textContent = counts.thanks.toLocaleString('id-ID');
@@ -249,16 +242,19 @@ async function loadChatData() {
     $('#cIh').textContent = counts.ih.toLocaleString('id-ID');
     $('#cMam').textContent = counts.mam.toLocaleString('id-ID');
     $('#cBobo').textContent = counts.bobo.toLocaleString('id-ID');
+    $('#cDuyung').textContent = counts.duyung.toLocaleString('id-ID');
+    $('#cEskrim').textContent = counts.eskrim.toLocaleString('id-ID');
 
+    // Render grafik
     const monthly = bucketMonthly(entries);
     renderChart(monthly);
 
+    // Update status
     const items = Object.entries(counts)
       .filter(([k, v]) => v > 0)
       .map(([k, v]) => `${k}: ${v.toLocaleString('id-ID')}`)
       .join(' • ');
-
-   
+    status.textContent = `Inii kataaa yang aku itung: ${items}. Harusnya segini kalo ga kelewatt.`;
 
   } catch (err) {
     status.textContent = 'Gagal memuat chat. Pastikan file ada di folder /data/';
@@ -274,6 +270,4 @@ document.addEventListener('DOMContentLoaded', () => {
   setInterval(updateLiveCounter, 1000);
   $('#year').textContent = new Date().getFullYear();
   loadChatData();
-
 });
-
