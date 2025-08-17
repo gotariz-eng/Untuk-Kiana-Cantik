@@ -1,10 +1,13 @@
 /* ==========================
-   SCRIPT - SUDAH DIPERBAIKI
+   SCRIPT - SUDAH DIPERBAIKI + FIREBASE
    ========================== */
+
 // Tanggal mulai
 const startDate = new Date('2025-04-13T00:00:00+07:00');
+
 // Helper
 const $ = sel => document.querySelector(sel);
+
 // Floating hearts
 function spawnFloatingHearts() {
   const wrap = $('.float-hearts');
@@ -19,6 +22,7 @@ function spawnFloatingHearts() {
     wrap.appendChild(s);
   }
 }
+
 // Update waktu real-time
 function updateLiveCounter() {
   const now = new Date();
@@ -34,6 +38,7 @@ function updateLiveCounter() {
   $('#minutes').textContent = minutes;
   $('#seconds').textContent = seconds;
 }
+
 // Animasi counter 1 → 124
 function acceleratedIntro() {
   const target = $('#acceleratedCount');
@@ -59,6 +64,7 @@ function acceleratedIntro() {
   }
   step(0);
 }
+
 // Smooth scroll
 document.addEventListener('click', (e) => {
   const a = e.target.closest('a[href^="#"]');
@@ -75,7 +81,7 @@ const KEY_PATTERNS = {
   maaf: /maa?p{1,4}|maa?f{1,4}|maapppin|maafin|maaf yaa|maaf yaw|maafin aku|sorry/i,
   thanks: /terima\s?kasi?h|terimakasih|makasi?h|makasi|makaci|maaci|makacii|makasii|makaciin|makasihin/i,
   marah: /marah|ngambek|kesel|ilfeel|bosan|bosen/i,
-  manis: /manis|maniez|manies|maniz|maniees|maniss|manisss/i,
+  manis: /manis|maniez|manies|maniz|maniees|maniss|manisss|mnis/i,
   oteyy: /oteyy|otey|ote|oty|otyy/i,
   huum: /hum{1,5}|humm{1,5}|hummm{1,5}|mmm{1,5}|mm{1,5}|hmmm{1,5}/i,
   gajadi: /gak jadi|gajadi|gakjadi|gajadii|gak jadi deh|batal/i,
@@ -108,7 +114,7 @@ function parseChat(text) {
     if (!dateMatch) continue;
     const dateStr = dateMatch[0].replace(/ /g, ' ');
 
-    // 🔹 Ekstrak nama pengirim: setelah `- ` sampai `:`
+    // 🔹 Ekstrak nama pengirim
     const senderMatch = dateStr.match(/-\s*(.+?):/);
     const sender = senderMatch ? senderMatch[1].trim() : 'Unknown';
 
@@ -123,13 +129,12 @@ function parseChat(text) {
     if (ampm.toLowerCase() === 'am' && hh === 12) hh = 0;
     const date = new Date(year, mon - 1, day, hh, mm);
 
-    // ✅ Simpan sender
     entries.push({ date, text: msgText, sender });
   }
   return entries;
 }
 
-// ✅ PERBAIKAN: Hitung semua kemunculan kata (bukan hanya 1)
+// Hitung semua kemunculan kata
 function countKeywords(text) {
   const result = {};
   for (const [key, regex] of Object.entries(KEY_PATTERNS)) {
@@ -143,21 +148,31 @@ function countKeywords(text) {
 // Kelompokkan per bulan
 function bucketMonthly(entries) {
   const map = new Map();
-  for (const { date, text } of entries) {
+  for (const { date, text, sender } of entries) {
     if (!date) continue;
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');
     const key = `${y}-${m}`;
-    if (!map.has(key)) map.set(key, {});
+    if (!map.has(key)) {
+      map.set(key, {});
+      for (const k of Object.keys(KEY_PATTERNS)) map.get(key)[k] = 0;
+      map.get(key).kianaBubble = 0;
+      map.get(key).farizBubble = 0;
+    }
+
     const counts = countKeywords(text);
     const current = map.get(key);
     for (const [k, v] of Object.entries(counts)) {
       current[k] = (current[k] || 0) + v;
     }
+
+    if (sender.includes('Kiana')) current.kianaBubble++;
+    else if (sender.includes('riz') || sender === 'Fariz') current.farizBubble++;
   }
+
   const labels = Array.from(map.keys()).sort();
   const data = {};
-  for (const key of Object.keys(KEY_PATTERNS)) {
+  for (const key of [...Object.keys(KEY_PATTERNS), 'kianaBubble', 'farizBubble']) {
     data[key] = labels.map(l => map.get(l)[key] || 0);
   }
   return { labels, data };
@@ -165,48 +180,89 @@ function bucketMonthly(entries) {
 
 // Render grafik
 let chart = null;
+let chartData = null; // 🔹 Simpan data global agar bisa diakses filter
+
 function renderChart({ labels, data }) {
+  chartData = data; // ✅ Simpan referensi data
   const ctx = $('#timelineChart');
   if (!ctx) return;
   if (chart) chart.destroy();
-  const datasets = [
-    { label: 'Kangen', data: data.kangen, borderColor: '#ff8fab', backgroundColor: 'rgba(255, 141, 171, 0.2)' },
-    { label: 'Maaf', data: data.maaf, borderColor: '#a0d8f1', backgroundColor: 'rgba(160, 216, 241, 0.2)' },
-    { label: 'Terima Kasih', data: data.thanks, borderColor: '#c2e7b0', backgroundColor: 'rgba(194, 231, 176, 0.2)' },
-    { label: 'Marah', data: data.marah, borderColor: '#f7768e', backgroundColor: 'rgba(247, 118, 142, 0.2)' },
-    { label: 'Manis', data: data.manis, borderColor: '#ffd6e0', backgroundColor: 'rgba(255, 214, 224, 0.2)' },
-    { label: 'Oteyy', data: data.oteyy, borderColor: '#ffcc00', backgroundColor: 'rgba(255, 204, 0, 0.2)' },
-    { label: 'Huum', data: data.huum, borderColor: '#b39ddb', backgroundColor: 'rgba(179, 157, 219, 0.2)' },
-    { label: 'Gak Jadi', data: data.gajadi, borderColor: '#ff6b6b', backgroundColor: 'rgba(255, 107, 107, 0.2)' },
-    { label: 'Ih/Aih', data: data.ih, borderColor: '#6eceda', backgroundColor: 'rgba(110, 206, 218, 0.2)' },
-    { label: 'Mam', data: data.mam, borderColor: '#8bc34a', backgroundColor: 'rgba(139, 195, 74, 0.2)' },
-    { label: 'Bobo', data: data.bobo, borderColor: '#9c27b0', backgroundColor: 'rgba(156, 39, 176, 0.2)' },
-    { label: 'Cute Smile', data: data.emot_smile, borderColor: '#ffeb3b', backgroundColor: 'rgba(255, 235, 59, 0.2)' },
-    { label: 'Almost Crying', data: data.emot_cry, borderColor: '#4caf50', backgroundColor: 'rgba(76, 175, 80, 0.2)' },
-    { label: 'Peluk & Cium', data: data.emot_hug, borderColor: '#e91e63', backgroundColor: 'rgba(233, 30, 99, 0.2)' },
-    { label: 'Lucu', data: data.emot_lucu, borderColor: '#ff9800', backgroundColor: 'rgba(255, 152, 0, 0.2)' },
-    { label: 'Duyung', data: data.duyung, borderColor: '#00b8d4', backgroundColor: 'rgba(0, 184, 212, 0.2)' },
-    { label: 'Eskrim', data: data.eskrim, borderColor: '#f50057', backgroundColor: 'rgba(245, 0, 87, 0.2)' }
-  ].filter(ds => ds.data.some(v => v > 0));
+
+  const allDatasets = [
+    { key: 'kangen', label: '❤️ Kangen', borderColor: '#ff8fab', backgroundColor: 'rgba(255, 141, 171, 0.2)' },
+    { key: 'maaf', label: '🙏 Maaf', borderColor: '#a0d8f1', backgroundColor: 'rgba(160, 216, 241, 0.2)' },
+    { key: 'thanks', label: '🎁 Terima Kasih', borderColor: '#c2e7b0', backgroundColor: 'rgba(194, 231, 176, 0.2)' },
+    { key: 'marah', label: '😤 Kesel', borderColor: '#f7768e', backgroundColor: 'rgba(247, 118, 142, 0.2)' },
+    { key: 'manis', label: '💖 Manis', borderColor: '#ffd6e0', backgroundColor: 'rgba(255, 214, 224, 0.2)' },
+    { key: 'oteyy', label: '🐱 Oteyy', borderColor: '#ffcc00', backgroundColor: 'rgba(255, 204, 0, 0.2)' },
+    { key: 'huum', label: '🤏 Huum', borderColor: '#b39ddb', backgroundColor: 'rgba(179, 157, 219, 0.2)' },
+    { key: 'gajadi', label: '🚫 Gajadi', borderColor: '#ff6b6b', backgroundColor: 'rgba(255, 107, 107, 0.2)' },
+    { key: 'ih', label: '🤭 Ih/Aih', borderColor: '#6eceda', backgroundColor: 'rgba(110, 206, 218, 0.2)' },
+    { key: 'mam', label: '🍽️ Mam', borderColor: '#8bc34a', backgroundColor: 'rgba(139, 195, 74, 0.2)' },
+    { key: 'bobo', label: '😴 Bobo', borderColor: '#9c27b0', backgroundColor: 'rgba(156, 39, 176, 0.2)' },
+    { key: 'duyung', label: '🧜‍♀️ Duyung', borderColor: '#00b8d4', backgroundColor: 'rgba(0, 184, 212, 0.2)' },
+    { key: 'eskrim', label: '🍦 Eskrim', borderColor: '#f50057', backgroundColor: 'rgba(245, 0, 87, 0.2)' },
+    { key: 'kianaBubble', label: '💬 Kiana', borderColor: '#4caf50', backgroundColor: 'rgba(76, 175, 80, 0.2)' },
+    { key: 'farizBubble', label: '💬 Fariz', borderColor: '#ff5722', backgroundColor: 'rgba(255, 87, 34, 0.2)' }
+  ];
+
+  const initialDatasets = allDatasets
+    .filter(ds => {
+      const input = document.querySelector(`.filter-container input[value="${ds.key}"]`);
+      return input?.checked;
+    })
+    .map(ds => ({
+      label: ds.label,
+      data: data[ds.key],
+      borderColor: ds.borderColor,
+      backgroundColor: ds.backgroundColor
+    }));
+
   chart = new Chart(ctx, {
     type: 'line',
-    data: { labels, datasets },
+    data: { labels, datasets: initialDatasets },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      scales: { 
-        x: { grid: { display: false } }, 
-        y: { beginAtZero: true, ticks: { precision: 0 } } 
+      scales: {
+        x: { grid: { display: false } },
+        y: { beginAtZero: true, ticks: { precision: 0 } }
       },
-      plugins: { 
-        legend: { position: 'bottom' }, 
-        tooltip: { enabled: true } 
+      plugins: {
+        legend: { position: 'bottom' },
+        tooltip: { enabled: true }
       }
     }
+  });
+
+  // 🔁 Hapus event lama, lalu tambahkan baru
+  document.querySelectorAll('.filter-container input[type="checkbox"]').forEach(checkbox => {
+    checkbox.onchange = null; // Bersihkan event lama
+    checkbox.addEventListener('change', function () {
+      const key = this.value;
+      const dsConfig = allDatasets.find(ds => ds.key === key);
+      if (!dsConfig) return;
+
+      const existingIndex = chart.data.datasets.findIndex(ds => ds.label === dsConfig.label);
+      if (this.checked && existingIndex === -1) {
+        // Tambahkan dataset
+        chart.data.datasets.push({
+          label: dsConfig.label,
+          data: chartData[key], // ✅ Gunakan data global
+          borderColor: dsConfig.borderColor,
+          backgroundColor: dsConfig.backgroundColor
+        });
+      } else if (!this.checked && existingIndex > -1) {
+        // Hapus dataset
+        chart.data.datasets.splice(existingIndex, 1);
+      }
+      chart.update();
+    });
   });
 }
 
 // Muat chat otomatis
+let globalChatText = '';
 async function loadChatData() {
   const status = $('#parseStatus');
   status.textContent = 'Memuat chat...';
@@ -214,6 +270,7 @@ async function loadChatData() {
     const response = await fetch('data/chat.txt');
     if (!response.ok) throw new Error('File tidak ditemukan');
     const text = await response.text();
+    globalChatText = text;
     const entries = parseChat(text);
 
     // 🔢 Hitung jumlah pesan per orang
@@ -262,6 +319,154 @@ async function loadChatData() {
   }
 }
 
+// 🔍 Pencarian Kata Dinamis (5 detik)
+function searchWord() {
+  const input = document.getElementById('searchInput');
+  const loadingDiv = document.getElementById('searchLoading');
+  const resultsDiv = document.getElementById('searchResults');
+  const word = input.value.trim().toLowerCase();
+  
+  if (!word) {
+    resultsDiv.innerHTML = '<span style="color:#ff6b6b">❌ Masukkan kata yang ingin dicari</span>';
+    return;
+  }
+
+  // Tampilkan animasi loading
+  loadingDiv.style.opacity = 1;
+  loadingDiv.className = 'typewriter';
+  loadingDiv.textContent = 'bentar yaa aku itung duluuu...';
+
+  // Gunakan globalChatText
+  const entries = parseChat(globalChatText);
+  let count = 0;
+
+  // ✅ Hitung hanya dari isi pesan
+  for (const entry of entries) {
+    if (entry.text.toLowerCase().includes(word)) {
+      count++;
+    }
+  }
+
+  // Hapus loading setelah 5 detik
+  setTimeout(() => {
+    loadingDiv.style.opacity = 0;
+    loadingDiv.textContent = '';
+
+    // Buat elemen hasil
+    const resultItem = document.createElement('div');
+    resultItem.style.padding = '8px';
+    resultItem.style.margin = '4px 0';
+    resultItem.style.backgroundColor = count > 0 ? 'rgba(255, 141, 171, 0.2)' : '#333';
+    resultItem.style.borderRadius = '6px';
+    resultItem.style.fontSize = '0.95em';
+
+    if (count === 0) {
+      resultItem.innerHTML = `<strong>"${word}"</strong>: <span style="color:#ff6b6b">Tidak ditemukan</span>`;
+    } else {
+      resultItem.innerHTML = `<strong>"${word}"</strong>: <span style="color:#b2ff59">${count} kali muncul</span>`;
+    }
+
+    // Tambahkan ke atas daftar
+    resultsDiv.prepend(resultItem);
+
+    // Bersihkan input
+    input.value = '';
+  }, 5000); // 5 detik
+}
+
+// 🔥 Inisialisasi Firebase (dengan pengecekan)
+let database = null;
+
+if (typeof firebase !== 'undefined') {
+  const firebaseConfig = {
+    apiKey: "AIzaSyAw8GC5-_HnZk-FXV8TWL-GyvlNOjDzwWo",
+    authDomain: "fariz-kiana-880b5.firebaseapp.com",
+    databaseURL: "https://fariz-kiana-880b5-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "fariz-kiana-880b5",
+    storageBucket: "fariz-kiana-880b5.firebasestorage.app",
+    messagingSenderId: "43234289410",
+    appId: "1:43234289410:web:704c439dc97e899898041b"
+  };
+
+  try {
+    firebase.initializeApp(firebaseConfig);
+    database = firebase.database();
+    console.log('✅ Firebase berhasil diinisialisasi');
+  } catch (error) {
+    console.warn('❌ Firebase gagal diinisialisasi:', error);
+  }
+} else {
+  console.warn('⚠️ Firebase SDK belum dimuat');
+}
+
+// 💘 Fitur: Seberapa Kangen Kamu? (Real-time)
+// 💘 Fitur: Seberapa Kangen Kamu? (Real-time)
+if (database) {
+  const kangenRef = database.ref('kangenCount');
+  const kangenCountEl = document.getElementById('kangenCount');
+  const loveBtn = document.querySelector('.love-btn');
+
+  // Tampilkan angka dari Firebase
+  kangenRef.on('value', (snapshot) => {
+    const count = snapshot.val() || 0;
+    if (kangenCountEl) {
+      kangenCountEl.textContent = count.toLocaleString('id-ID');
+    }
+
+    // Cek milestone
+    showMilestone(count);
+  });
+
+  // Saat tombol ❤️ diklik
+  loveBtn.addEventListener('click', (e) => {
+    e.stopPropagation(); // Cegah event ke parent
+
+    // Tambah 1 di Firebase
+    kangenRef.transaction(currentValue => (currentValue || 0) + 1);
+
+    // Animasi detup tombol
+    loveBtn.classList.add('pulse');
+    setTimeout(() => {
+      loveBtn.classList.remove('pulse');
+    }, 600);
+
+    // Munculkan hati besar di tengah layar
+    const heart = document.createElement('span');
+    heart.textContent = '❤️';
+    heart.classList.add('heart-pop');
+    heart.style.left = '50vw';
+    heart.style.top = '50vh';
+    document.body.appendChild(heart);
+
+    // Hapus dari DOM setelah animasi
+    setTimeout(() => {
+      heart.remove();
+    }, 1000);
+  });
+}
+
+// 🎁 Tampilkan pesan milestone
+function showMilestone(count) {
+  const messages = {
+    10: "Sepuluhhh?",
+    50: "Segitu aja kahh🙃",
+    100: "Gaa kepaksaaa kann maniess😅",
+    200: "Benerannn?? hwaaa😫",
+    300: "Miss u moreee, cantikkk💖"
+  };
+
+  if (messages[count]) {
+    const popup = document.createElement('div');
+    popup.className = 'milestone-popup';
+    popup.textContent = messages[count];
+    document.body.appendChild(popup);
+
+    setTimeout(() => {
+      popup.remove();
+    }, 10000);
+  }
+}
+
 // On Load
 document.addEventListener('DOMContentLoaded', () => {
   spawnFloatingHearts();
@@ -270,4 +475,23 @@ document.addEventListener('DOMContentLoaded', () => {
   setInterval(updateLiveCounter, 1000);
   $('#year').textContent = new Date().getFullYear();
   loadChatData();
+
+  // ✅ Tambahkan event listener setelah DOM siap
+  const searchBtn = document.getElementById('searchBtn');
+  const searchInput = document.getElementById('searchInput');
+  if (searchBtn && searchInput) {
+    searchBtn.addEventListener('click', searchWord);
+    searchInput.addEventListener('keypress', e => {
+      if (e.key === 'Enter') searchWord();
+    });
+  }
+
+  // Event listener untuk tombol clear
+  const clearBtn = document.getElementById('clearSearchResults');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', function () {
+      const resultsDiv = document.getElementById('searchResults');
+      resultsDiv.innerHTML = '';
+    });
+  }
 });
