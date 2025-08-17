@@ -13,6 +13,10 @@
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  
   <!-- Style -->
   <link rel="stylesheet" href="style.css">
 </head>
@@ -58,10 +62,50 @@
     </div>
   </header>
 
+  <!-- Bagian Pencarian Kata Dinamis -->
+  <section id="searchWord">
+    <div class="container">
+      <div class="card">
+        <h2>🔍 Cari Kata Favorit</h2>
+        <p>Kamuu mau carii kataapaa </p>
+        
+        <!-- Input Pencarian -->
+        <div style="display:flex; gap:10px; margin:20px 0;">
+          <input 
+            type="text" 
+            id="searchInput" 
+            placeholder="Cari kata... (misal: oteyy, eskrim)" 
+            style="flex:1; padding:10px; border-radius:8px; border:none; font-size:1em;"
+          >
+          <button 
+            id="searchBtn" 
+            style="padding:10px 20px; background:#ff8fab; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">
+            Cari
+          </button>
+        </div>
+
+        <!-- Loading Animation -->
+        <div id="searchLoading" style="margin:10px 0; color:#ff8fab; font-weight:bold; min-height:24px; opacity:0; transition:opacity 0.3s;"></div>
+
+        <!-- Tombol Hapus -->
+        <div style="text-align:right; margin-bottom:10px;">
+          <button 
+            id="clearSearchResults" 
+            style="padding:6px 12px; background:#666; color:white; border:none; border-radius:6px; font-size:0.9em; cursor:pointer;">
+            🗑️ Hapus Semua
+          </button>
+        </div>
+
+        <!-- Hasil Pencarian -->
+        <div id="searchResults" style="margin-top:10px; font-size:1em; color:#fff; max-height:300px; overflow-y:auto; padding:10px; background:#1a1a2e; border-radius:8px;"></div>
+      </div>
+    </div>
+  </section>
+
   <section id="stats">
     <div class="container">
       <div class="card">
-        <h2>📊 Word Counter</h2>
+        <h2>📊 Itungan Kata</h2>
         <p>Jumlah kata favorit yang muncul dari percakapan kita ❤️</p>
 
         <div id="parseStatus" style="margin-top:1rem; opacity:.85"></div>
@@ -110,24 +154,66 @@
         <h2>📈 Grafik Kata</h2>
         <p>Menampilkan frekuensi kata-kata favorit tiap bulan</p>
         <canvas id="timelineChart" height="260" role="img" aria-label="Grafik timeline kata kunci"></canvas>
+        <!-- Tambahkan ini di index.html, setelah </canvas> dan sebelum </div> akhir section -->
+        <div class="filter-container">
+          <h3 style="color: #ff8fab; margin-bottom: 10px;">🔍 Filter Kata</h3>
+          <div class="filter-grid">
+            <label><input type="checkbox" value="kangen" checked> ❤️ Kangen</label>
+            <label><input type="checkbox" value="maaf" checked> 🙏 Maaf</label>
+            <label><input type="checkbox" value="thanks" checked> 🎁 Terima Kasih</label>
+            <label><input type="checkbox" value="marah" checked> 😤 Kesel</label>
+            <label><input type="checkbox" value="manis" checked> 💖 Manis</label>
+            <label><input type="checkbox" value="oteyy" checked> 🐱 Oteyy</label>
+            <label><input type="checkbox" value="huum" checked> 🤏 Huum</label>
+            <label><input type="checkbox" value="gajadi" checked> 🚫 Gajadi</label>
+            <label><input type="checkbox" value="ih" checked> 🤭 Ih/Aih</label>
+            <label><input type="checkbox" value="mam" checked> 🍽️ Mam</label>
+            <label><input type="checkbox" value="bobo" checked> 😴 Bobo</label>
+            <label><input type="checkbox" value="duyung" checked> 🧜‍♀️ Duyung</label>
+            <label><input type="checkbox" value="eskrim" checked> 🍦 Eskrim</label>
+            <label><input type="checkbox" value="kianaBubble" checked> 💬 Kiana</label>
+            <label><input type="checkbox" value="farizBubble" checked> 💬 Fariz</label>
+          </div>
+        </div>
       </div>
     </div>
   </section>
 
+  <!-- Fitur: Seberapa Kangen Kamu? -->
+  <section id="kangenGame" style="min-height: 400px; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+    <div class="container">
+      <div class="card" style="text-align: center; padding: 30px; position: relative;">
+        <h2>💘 Seberapa Kangen Kamuuuu?</h2>
+        <p>Coba klik 💟 di bawah untuk kirim kangen ke akuuu</p>
+
+        <!-- Tombol Love (yang bisa diklik) -->
+        <button class="love-btn" style="font-size: 4em; background: none; border: none; cursor: pointer; margin: 20px 0; color: #ff8fab;">
+          💟
+        </button>
+
+        <!-- Counter (hanya tampil, tidak bisa diklik) -->
+        <div id="kangenCount" style="font-size: 3.5em; font-weight: bold; color: #ff8fab; user-select: none;">
+          0
+        </div>
+
+        <small>Makasiii kangennyaa</small>
+      </div>
+    </div>
+  </section>
 
   <!-- Gallery, Notes, Footer tetap sama -->
   <section id="gallery">
     <div class="container">
       <h2>🖼️ Galeri Kita</h2>
       <div class="gallery">
-        <img src="assets/foto1.jpg" alt="Kita bersama" />
-        <img src="assets/foto2.jpg" alt="Kita bersama" />
-        <img src="assets/foto3.jpg" alt="Kita bersama" />
-        <img src="assets/foto4.jpg" alt="Kita bersama" />
-        <img src="assets/foto5.jpg" alt="Kita bersama" />
-        <img src="assets/foto6.jpg" alt="Kita bersama" />
-        <img src="assets/foto7.jpg" alt="Kita bersama" />
-        <img src="assets/foto8.jpg" alt="Kita bersama" />
+        <img src="assets/foto1.jpeg" alt="Kita bersama" />
+        <img src="assets/foto2.jpeg" alt="Kita bersama" />
+        <img src="assets/foto3.jpeg" alt="Kita bersama" />
+        <img src="assets/foto4.jpeg" alt="Kita bersama" />
+        <img src="assets/foto5.jpeg" alt="Kita bersama" />
+        <img src="assets/foto6.jpeg" alt="Kita bersama" />
+        <img src="assets/foto7.jpeg" alt="Kita bersama" />
+        <img src="assets/foto8.jpeg" alt="Kita bersama" />
         <img src="assets/foto9.jpeg" alt="Kita bersama" />
         <img src="assets/foto10.jpeg" alt="Kita bersama" />
       </div>
