@@ -539,4 +539,20 @@ footer a {
     }
   }
 
+  @media (max-width: 480px) {
+    .card {
+      padding: 16px;
+    }
+
+    .search-input-group {
+      gap: 6px;
+    }
+
+    #searchInput,
+    #searchBtn {
+      font-size: 0.95em;
+      padding: 8px;
+    }
+  }
+
   }
