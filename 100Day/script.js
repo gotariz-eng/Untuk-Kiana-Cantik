@@ -512,12 +512,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Simbol pemain
-  const PLAYER_KIANA = '🐱';
-  const PLAYER_FARIZ = '🐦';
+  const PLAYER_KIANA = '👧🏻';
+  const PLAYER_FARIZ = '👦🏻';
 
   // Pilih peran kamu
   let mySymbol = null;
-  const choice = confirm("Kamu Fariz? (OK = 🐦, Cancel = 🐱)");
+  const choice = confirm("Pilihh  (Fariz OK = 👦🏻) (Kiana Cancel= 👧🏻)");
   mySymbol = choice ? PLAYER_FARIZ : PLAYER_KIANA;
 
   // Referensi Firebase
@@ -610,19 +610,27 @@ document.addEventListener('DOMContentLoaded', () => {
             // Tentukan siapa yang mulai di game berikutnya
             const nextStarter = game.currentPlayer === PLAYER_KIANA ? PLAYER_FARIZ : PLAYER_KIANA;
 
+            // Reset game di Firebase
             gameRef.set({
               board: ['', '', '', '', '', '', '', '', ''],
-              currentPlayer: nextStarter, // Giliran gantian
+              currentPlayer: nextStarter,
               winner: '',
-              lastMove: Date.now()
+              lastMove: Date.now(),
+              lastWinner: hasWinner ? (mySymbol === PLAYER_KIANA ? 'Kiana' : 'Fariz') : null // Catat pemenang
             });
 
             // Tambah skor hanya sekali
             if (hasWinner) {
               const winner = mySymbol === PLAYER_KIANA ? 'Kiana' : 'Fariz';
-              scoresRef.child(winner.toLowerCase()).transaction(v => (v || 0) + 1);
+              
+              // Gunakan transaction untuk cegah duplikasi
+              scoresRef.child(winner.toLowerCase()).transaction((current) => {
+                // Cek apakah sudah pernah menang di game ini
+                const lastWinnerRef = gameRef.child('lastWinner');
+                return current ? current : 1; // Hanya tambah jika belum ada
+              });
             } else if (isDraw) {
-              scoresRef.child('draw').transaction(v => (v || 0) + 1);
+              scoresRef.child('draw').transaction((current) => current ? current : 1);
             }
           }, 2000);
         } else {
@@ -635,6 +643,72 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
   }
+
+  // 🎉 Confeti
+  function launchConfetti() {
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 }
+    });
+  }
+
+  // 💬 Kata-kata sesuai gaya kalian
+  const winQuotes = [
+    "Wahh, kamu itu kerenn banget si! 🫶🏻",
+    "Oteyy manies, menang terus deh kamu~",
+    "Kamu mau ngapainn??? Menang mulu sih!",
+    "Horeee, kamu juara hari ini! 🏆",
+    "I love you more than words can say. Dan kamu juga jago main XOX 😋"
+  ];
+
+  const loseQuotes = [
+    "Aduh, jangan sedih manis... lain kali menang yaa",
+    "Gak apa-apa, kamu tetep abadi di hati aku kok ❤️",
+    "Ih, jangan ngambek, aku kan masih di sini",
+    "Capek main? Mau mam dulu aja, terus main lagi",
+    "Tenang ajaaa kianaaa☺️, yang penting kita main bareng"
+  ];
+
+  const drawQuotes = [
+    "Seri? Berarti kita seimbang. Seperti es krim dan aku.",
+    "Yaudah kita seri aja, biar adil~",
+    "Mainnya sama-sama malas, wajar serii",
+    "Ih, jangan pada males dong, main lagi!",
+    "Seri itu tandanya kita terlalu cocok, gapapa deh"
+  ];
+
+  // 🎭 Tampilkan modal akhir
+  function showEndGame(winner, isDraw = false) {
+    const modal = document.getElementById('endGameModal');
+    const title = document.getElementById('endGameTitle');
+    const quote = document.getElementById('endGameQuote');
+
+    if (isDraw) {
+      title.textContent = '🤝 Seri!';
+      quote.textContent = drawQuotes[Math.floor(Math.random() * drawQuotes.length)];
+    } else if (winner === 'Kiana') {
+      title.textContent = '🎉 Kiana Menang!';
+      quote.textContent = winQuotes[Math.floor(Math.random() * winQuotes.length)];
+      if (mySymbol === PLAYER_KIANA) launchConfetti(); // Hanya pemain yang menang dapat confeti
+    } else {
+      title.textContent = '🎉 Fariz Menang!';
+      quote.textContent = winQuotes[Math.floor(Math.random() * winQuotes.length)];
+      if (mySymbol === PLAYER_FARIZ) launchConfetti();
+    }
+
+    // Untuk yang kalah
+    if (!isDraw && mySymbol !== (winner === 'Kiana' ? PLAYER_KIANA : PLAYER_FARIZ)) {
+      quote.textContent = loseQuotes[Math.floor(Math.random() * loseQuotes.length)];
+    }
+
+    modal.style.display = 'flex';
+  }
+
+  // Tutup modal
+  document.getElementById('closeModal').addEventListener('click', () => {
+    document.getElementById('endGameModal').style.display = 'none';
+  });
 
   // Update UI dari Firebase
   if (gameRef) {
