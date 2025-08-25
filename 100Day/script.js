@@ -512,12 +512,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Simbol pemain
-  const PLAYER_KIANA = '👧🏻';
-  const PLAYER_FARIZ = '👦🏻';
+  const PLAYER_KIANA = '🐱';
+  const PLAYER_FARIZ = '🐦';
 
   // Pilih peran kamu
   let mySymbol = null;
-  const choice = confirm("Pilihh  (Fariz OK = 👦🏻Cancel) (Kiana= 👧🏻)");
+  const choice = confirm("Kamu Fariz? (OK = 🐦, Cancel = 🐱)");
   mySymbol = choice ? PLAYER_FARIZ : PLAYER_KIANA;
 
   // Referensi Firebase
