@@ -495,3 +495,170 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+// 🎮 XOX GAME - Multiplayer LDR Mode (Fariz vs Kiana)
+document.addEventListener('DOMContentLoaded', () => {
+  // Cek elemen dulu
+  const board = document.getElementById('board');
+  const message = document.getElementById('message');
+  const playerTurn = document.getElementById('playerTurn');
+  const resetBtn = document.getElementById('resetBtn');
+  const scoreKiana = document.getElementById('scoreKiana');
+  const scoreFariz = document.getElementById('scoreFariz');
+
+  if (!board || !message || !playerTurn || !resetBtn || !scoreKiana || !scoreFariz) {
+    console.warn('⚠️ XOX: Salah satu elemen tidak ditemukan. Pastikan HTML sudah benar.');
+    return;
+  }
+
+  // Simbol pemain
+  const PLAYER_KIANA = '🐱';
+  const PLAYER_FARIZ = '🐦';
+
+  // Pilih peran kamu
+  let mySymbol = null;
+  const choice = confirm("Kamu Fariz? (OK = 🐦, Cancel = 🐱)");
+  mySymbol = choice ? PLAYER_FARIZ : PLAYER_KIANA;
+
+  // Referensi Firebase
+  let gameRef = null;
+  let scoresRef = null;
+
+  if (typeof database !== 'undefined') {
+    gameRef = database.ref('xoxGame');
+    scoresRef = database.ref('xoxScores');
+  } else {
+    console.warn('⚠️ Firebase tidak tersedia. Game berjalan offline.');
+  }
+
+  // Muat skor dari Firebase atau localStorage
+  if (scoresRef) {
+    scoresRef.on('value', (snap) => {
+      const val = snap.val() || { kiana: 0, fariz: 0 };
+      scoreKiana.textContent = val.kiana;
+      scoreFariz.textContent = val.fariz;
+    });
+  } else {
+    // Fallback ke localStorage
+    const saved = JSON.parse(localStorage.getItem('xoxLocalScores') || '{"kiana":0,"fariz":0}');
+    scoreKiana.textContent = saved.kiana;
+    scoreFariz.textContent = saved.fariz;
+  }
+
+  // Fungsi: Buat papan
+  function createBoard() {
+    board.innerHTML = '';
+    for (let i = 0; i < 9; i++) {
+      const cell = document.createElement('div');
+      cell.dataset.index = i;
+      cell.style.cssText = `
+        width: 80px; height: 80px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #1a1a2e;
+        border-radius: 8px;
+        font-size: 2em;
+        cursor: pointer;
+        user-select: none;
+        outline: none;
+      `;
+      cell.addEventListener('click', handleCellClick);
+      board.appendChild(cell);
+    }
+    board.style.cssText = 'display: grid; grid-template-columns: repeat(3, 80px); gap: 8px; margin: 20px auto;';
+  }
+
+  // Fungsi: Klik kotak
+  function handleCellClick(e) {
+    const index = e.target.dataset.index;
+    if (!index || e.target.textContent !== '') return;
+
+    if (gameRef) {
+      // Mode online (Firebase)
+      gameRef.transaction(currentGame => {
+        const game = currentGame || {
+          board: ['', '', '', '', '', '', '', '', ''],
+          currentPlayer: PLAYER_KIANA,
+          winner: '',
+          lastMove: Date.now()
+        };
+
+        if (game.winner || game.board[index] !== '' || game.currentPlayer !== mySymbol) {
+          return; // Batalkan
+        }
+
+        game.board[index] = mySymbol;
+
+        // Cek menang
+        const winPatterns = [
+          [0,1,2], [3,4,5], [6,7,8],
+          [0,3,6], [1,4,7], [2,5,8],
+          [0,4,8], [2,4,6]
+        ];
+
+        for (const [a,b,c] of winPatterns) {
+          if (game.board[a] && game.board[a] === game.board[b] && game.board[a] === game.board[c]) {
+            game.winner = mySymbol === PLAYER_KIANA ? 'Kiana' : 'Fariz';
+          }
+        }
+
+        if (!game.winner) {
+          game.currentPlayer = mySymbol === PLAYER_KIANA ? PLAYER_FARIZ : PLAYER_KIANA;
+        }
+        game.lastMove = Date.now();
+        return game;
+      });
+    } else {
+      // Mode offline (localStorage)
+      alert('Fitur ini butuh Firebase. Skor tidak akan disinkron.');
+    }
+  }
+
+  // Update UI dari Firebase
+  if (gameRef) {
+    gameRef.on('value', (snapshot) => {
+      const data = snapshot.val();
+      if (!data) return;
+
+      const cells = document.querySelectorAll('#board div');
+      cells.forEach((cell, i) => {
+        cell.textContent = data.board[i] || '';
+      });
+
+      playerTurn.textContent = data.currentPlayer === PLAYER_KIANA ? '🐱 Kiana' : '🐦 Fariz';
+      playerTurn.style.color = data.currentPlayer === PLAYER_KIANA ? '#ff8fab' : '#a0d8f1';
+
+      if (data.winner) {
+        message.textContent = `🎉 ${data.winner} menang!`;
+        if (scoresRef) {
+          scoresRef.child(data.winner.toLowerCase()).transaction(v => (v || 0) + 1);
+        }
+      } else if (data.board.every(cell => cell !== '')) {
+        message.textContent = '🤝 Seri!';
+      } else {
+        message.textContent = '';
+      }
+    });
+  }
+
+  // Reset game
+  resetBtn.addEventListener('click', () => {
+    if (confirm('Yakin reset game?')) {
+      if (gameRef) {
+        gameRef.remove();
+      }
+      message.textContent = '';
+      board.innerHTML = '';
+      createBoard(); // Buat ulang + event listener
+    }
+  });
+
+  // Cegah fokus otomatis
+  board.addEventListener('mousedown', e => {
+    if (e.target.dataset.index) e.preventDefault();
+  });
+
+  // Inisialisasi
+  createBoard();
+});
