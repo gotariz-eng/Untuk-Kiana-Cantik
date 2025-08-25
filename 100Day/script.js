@@ -498,7 +498,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // 🎮 XOX GAME - Multiplayer LDR Mode (Fariz vs Kiana)
 document.addEventListener('DOMContentLoaded', () => {
-  // Cek elemen dulu
   const board = document.getElementById('board');
   const message = document.getElementById('message');
   const playerTurn = document.getElementById('playerTurn');
@@ -517,7 +516,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Pilih peran kamu
   let mySymbol = null;
-  const choice = confirm("Kamu Fariz? (OK = 🐦, Cancel = 🐱)");
+  const choice = confirm("OK untuk Fariz, Cancel untuk Kianaa(OK = 🐦, Cancel = 🐱)");
   mySymbol = choice ? PLAYER_FARIZ : PLAYER_KIANA;
 
   // Referensi Firebase
@@ -531,18 +530,13 @@ document.addEventListener('DOMContentLoaded', () => {
     console.warn('⚠️ Firebase tidak tersedia. Game berjalan offline.');
   }
 
-  // Muat skor dari Firebase atau localStorage
+  // Muat skor dari Firebase
   if (scoresRef) {
     scoresRef.on('value', (snap) => {
       const val = snap.val() || { kiana: 0, fariz: 0 };
       scoreKiana.textContent = val.kiana;
       scoreFariz.textContent = val.fariz;
     });
-  } else {
-    // Fallback ke localStorage
-    const saved = JSON.parse(localStorage.getItem('xoxLocalScores') || '{"kiana":0,"fariz":0}');
-    scoreKiana.textContent = saved.kiana;
-    scoreFariz.textContent = saved.fariz;
   }
 
   // Fungsi: Buat papan
@@ -575,59 +569,54 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!index || e.target.textContent !== '') return;
 
     if (gameRef) {
-      // Mode online (Firebase)
       gameRef.transaction(currentGame => {
-      const game = currentGame || {
-        board: ['', '', '', '', '', '', '', '', ''],
-        currentPlayer: PLAYER_KIANA,
-        winner: '',
-        lastMove: Date.now()
-      };
+        const game = currentGame || {
+          board: ['', '', '', '', '', '', '', '', ''],
+          currentPlayer: PLAYER_KIANA,
+          winner: '',
+          lastMove: Date.now()
+        };
 
-      // Cek apakah game sudah ada pemenang
-      if (game.winner || game.board[index] !== '' || game.currentPlayer !== mySymbol) {
-        return; // Batalkan transaksi
-      }
-
-      // Update papan
-      game.board[index] = mySymbol;
-
-      // Cek menang
-      const winPatterns = [
-        [0,1,2], [3,4,5], [6,7,8],
-        [0,3,6], [1,4,7], [2,5,8],
-        [0,4,8], [2,4,6]
-      ];
-
-      let hasWinner = false;
-      for (const [a,b,c] of winPatterns) {
-        if (game.board[a] && game.board[a] === game.board[b] && game.board[a] === game.board[c]) {
-          game.winner = mySymbol === PLAYER_KIANA ? 'Kiana' : 'Fariz';
-          hasWinner = true;
+        if (game.winner || game.board[index] !== '' || game.currentPlayer !== mySymbol) {
+          return; // Batalkan transaksi
         }
-      }
 
-      // ✅ Reset otomatis setelah 2 detik jika ada pemenang
-      if (hasWinner) {
-        setTimeout(() => {
-          gameRef.remove(); // Hapus game → semua perangkat akan reset
-        }, 2000);
-      } else if (game.board.every(cell => cell !== '')) {
-        // Seri
-        setTimeout(() => {
-          gameRef.remove();
-        }, 2000);
-      } else {
-        // Ganti giliran
-        game.currentPlayer = mySymbol === PLAYER_KIANA ? PLAYER_FARIZ : PLAYER_KIANA;
-      }
+        // Update papan
+        game.board[index] = mySymbol;
 
-      game.lastMove = Date.now();
-      return game;
-    });
-    } else {
-      // Mode offline (localStorage)
-      alert('Fitur ini butuh Firebase. Skor tidak akan disinkron.');
+        // Cek menang
+        const winPatterns = [
+          [0,1,2], [3,4,5], [6,7,8],
+          [0,3,6], [1,4,7], [2,5,8],
+          [0,4,8], [2,4,6]
+        ];
+
+        let hasWinner = false;
+        for (const [a,b,c] of winPatterns) {
+          if (game.board[a] && game.board[a] === game.board[b] && game.board[a] === game.board[c]) {
+            game.winner = mySymbol === PLAYER_KIANA ? 'Kiana' : 'Fariz';
+            hasWinner = true;
+          }
+        }
+
+        // Jika menang atau seri → reset otomatis setelah 2 detik
+        if (hasWinner || game.board.every(cell => cell !== '')) {
+          setTimeout(() => {
+            gameRef.set({
+              board: ['', '', '', '', '', '', '', '', ''], // Reset semua ke 0/kosong
+              currentPlayer: PLAYER_KIANA, // Mulai dari Kiana
+              winner: '',
+              lastMove: Date.now()
+            });
+          }, 2000);
+        } else {
+          // Ganti giliran
+          game.currentPlayer = mySymbol === PLAYER_KIANA ? PLAYER_FARIZ : PLAYER_KIANA;
+        }
+
+        game.lastMove = Date.now();
+        return game;
+      });
     }
   }
 
@@ -637,40 +626,58 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = snapshot.val();
       if (!data) return;
 
+      // Inisialisasi default jika data tidak lengkap
+      const boardData = data.board || ['', '', '', '', '', '', '', '', ''];
+      const currentPlayer = data.currentPlayer || PLAYER_KIANA;
+      const winner = data.winner || '';
+
+      // Update tampilan kotak
       const cells = document.querySelectorAll('#board div');
       cells.forEach((cell, i) => {
-        cell.textContent = data.board[i] || '';
+        cell.textContent = boardData[i] || '';
       });
 
-      playerTurn.textContent = data.currentPlayer === PLAYER_KIANA ? '🐱 Kiana' : '🐦 Fariz';
-      playerTurn.style.color = data.currentPlayer === PLAYER_KIANA ? '#ff8fab' : '#a0d8f1';
+      playerTurn.textContent = currentPlayer === PLAYER_KIANA ? '🐱 Kiana' : '🐦 Fariz';
+      playerTurn.style.color = currentPlayer === PLAYER_KIANA ? '#ff8fab' : '#a0d8f1';
 
-      if (data.winner) {
-        message.textContent = `🎉 ${data.winner} menang!`;
-        if (scoresRef) {
-          scoresRef.child(data.winner.toLowerCase()).transaction(v => (v || 0) + 1);
+      if (winner) {
+        message.textContent = `🎉 ${winner} menang!`;
+
+        // Tambah skor hanya sekali
+        const lastWinner = localStorage.getItem('lastXOXWinner');
+        if (lastWinner !== winner) {
+          if (scoresRef) {
+            scoresRef.child(winner.toLowerCase()).transaction(v => (v || 0) + 1);
+          }
+          localStorage.setItem('lastXOXWinner', winner);
         }
-      } else if (data.board.every(cell => cell !== '')) {
+      } else if (boardData.every(cell => cell !== '')) {
         message.textContent = '🤝 Seri!';
       } else {
         message.textContent = '';
       }
     });
+
+    // Reset penanda skor saat game dimulai ulang
+    gameRef.on('child_changed', (snapshot) => {
+      if (!snapshot.val().winner) {
+        localStorage.removeItem('lastXOXWinner');
+      }
+    });
   }
 
-  gameRef.on('child_removed', () => {
-    localStorage.removeItem('lastXOXWinner');
-  });
-
-  // Reset game
+  // Tombol reset manual
   resetBtn.addEventListener('click', () => {
-    if (confirm('Yakin reset game?')) {
+    if (confirm('Reset game?')) {
       if (gameRef) {
-        gameRef.remove();
+        gameRef.set({
+          board: ['', '', '', '', '', '', '', '', ''],
+          currentPlayer: PLAYER_KIANA,
+          winner: '',
+          lastMove: Date.now()
+        });
       }
-      message.textContent = '';
-      board.innerHTML = '';
-      createBoard(); // Buat ulang + event listener
+      localStorage.removeItem('lastXOXWinner');
     }
   });
 
