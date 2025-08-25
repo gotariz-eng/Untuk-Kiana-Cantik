@@ -504,8 +504,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const resetBtn = document.getElementById('resetBtn');
   const scoreKiana = document.getElementById('scoreKiana');
   const scoreFariz = document.getElementById('scoreFariz');
+  const scoreDraw = document.getElementById('scoreDraw'); // Tambahkan elemen ini
 
-  if (!board || !message || !playerTurn || !resetBtn || !scoreKiana || !scoreFariz) {
+  if (!board || !message || !playerTurn || !resetBtn || !scoreKiana || !scoreFariz || !scoreDraw) {
     console.warn('⚠️ XOX: Salah satu elemen tidak ditemukan. Pastikan HTML sudah benar.');
     return;
   }
@@ -516,7 +517,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Pilih peran kamu
   let mySymbol = null;
-  const choice = confirm("OK untuk Fariz, Cancel untuk Kianaa(OK = 🐦, Cancel = 🐱)");
+  const choice = confirm("Kamu Fariz? (OK = 🐦, Cancel = 🐱)");
   mySymbol = choice ? PLAYER_FARIZ : PLAYER_KIANA;
 
   // Referensi Firebase
@@ -533,9 +534,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // Muat skor dari Firebase
   if (scoresRef) {
     scoresRef.on('value', (snap) => {
-      const val = snap.val() || { kiana: 0, fariz: 0 };
+      const val = snap.val() || { kiana: 0, fariz: 0, draw: 0 };
       scoreKiana.textContent = val.kiana;
       scoreFariz.textContent = val.fariz;
+      scoreDraw.textContent = val.draw; // Update skor seri
     });
   }
 
@@ -572,7 +574,7 @@ document.addEventListener('DOMContentLoaded', () => {
       gameRef.transaction(currentGame => {
         const game = currentGame || {
           board: ['', '', '', '', '', '', '', '', ''],
-          currentPlayer: PLAYER_KIANA,
+          currentPlayer: PLAYER_KIANA, // Kiana mulai duluan di game pertama
           winner: '',
           lastMove: Date.now()
         };
@@ -599,15 +601,29 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
 
+        // Cek seri
+        const isDraw = game.board.every(cell => cell !== '') && !hasWinner;
+
         // Jika menang atau seri → reset otomatis setelah 2 detik
-        if (hasWinner || game.board.every(cell => cell !== '')) {
+        if (hasWinner || isDraw) {
           setTimeout(() => {
+            // Tentukan siapa yang mulai di game berikutnya
+            const nextStarter = game.currentPlayer === PLAYER_KIANA ? PLAYER_FARIZ : PLAYER_KIANA;
+
             gameRef.set({
-              board: ['', '', '', '', '', '', '', '', ''], // Reset semua ke 0/kosong
-              currentPlayer: PLAYER_KIANA, // Mulai dari Kiana
+              board: ['', '', '', '', '', '', '', '', ''],
+              currentPlayer: nextStarter, // Giliran gantian
               winner: '',
               lastMove: Date.now()
             });
+
+            // Tambah skor hanya sekali
+            if (hasWinner) {
+              const winner = mySymbol === PLAYER_KIANA ? 'Kiana' : 'Fariz';
+              scoresRef.child(winner.toLowerCase()).transaction(v => (v || 0) + 1);
+            } else if (isDraw) {
+              scoresRef.child('draw').transaction(v => (v || 0) + 1);
+            }
           }, 2000);
         } else {
           // Ganti giliran
@@ -626,7 +642,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = snapshot.val();
       if (!data) return;
 
-      // Inisialisasi default jika data tidak lengkap
       const boardData = data.board || ['', '', '', '', '', '', '', '', ''];
       const currentPlayer = data.currentPlayer || PLAYER_KIANA;
       const winner = data.winner || '';
@@ -642,26 +657,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (winner) {
         message.textContent = `🎉 ${winner} menang!`;
-
-        // Tambah skor hanya sekali
-        const lastWinner = localStorage.getItem('lastXOXWinner');
-        if (lastWinner !== winner) {
-          if (scoresRef) {
-            scoresRef.child(winner.toLowerCase()).transaction(v => (v || 0) + 1);
-          }
-          localStorage.setItem('lastXOXWinner', winner);
-        }
       } else if (boardData.every(cell => cell !== '')) {
         message.textContent = '🤝 Seri!';
       } else {
         message.textContent = '';
-      }
-    });
-
-    // Reset penanda skor saat game dimulai ulang
-    gameRef.on('child_changed', (snapshot) => {
-      if (!snapshot.val().winner) {
-        localStorage.removeItem('lastXOXWinner');
       }
     });
   }
@@ -672,12 +671,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (gameRef) {
         gameRef.set({
           board: ['', '', '', '', '', '', '', '', ''],
-          currentPlayer: PLAYER_KIANA,
+          currentPlayer: PLAYER_KIANA, // Mulai dari Kiana
           winner: '',
           lastMove: Date.now()
         });
       }
-      localStorage.removeItem('lastXOXWinner');
     }
   });
 
